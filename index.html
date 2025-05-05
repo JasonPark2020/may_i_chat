@@ -1,0 +1,58 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <title>May I Voice Chatbot</title>
+</head>
+<body>
+  <h1>🎤 Speak to the Chatbot</h1>
+  <button onclick="startRecognition()">🎙️ Start Talking</button>
+  <p id="transcript"></p>
+  <p id="reply"></p>
+
+  <script>
+    const recognition = new (window.SpeechRecognition || window.webkitSpeechRecognition)();
+    recognition.lang = 'en-US';
+
+    recognition.onresult = function(event) {
+      const text = event.results[0][0].transcript;
+      document.getElementById('transcript').innerText = "You said: " + text;
+      sendToDialogflow(text);
+    };
+
+    function startRecognition() {
+      recognition.start();
+    }
+
+    function sendToDialogflow(text) {
+      fetch('https://dialogflow.googleapis.com/v2/projects/YOUR_PROJECT_ID/agent/sessions/chatbot02-vwfw', {
+        method: 'POST',
+        headers: {
+          'Authorization': 'Bearer YOUR_ACCESS_TOKEN',
+          'Content-Type': 'application/json'
+        },
+        body: JSON.stringify({
+          queryInput: {
+            text: {
+              text: text,
+              languageCode: 'en'
+            }
+          }
+        })
+      })
+      .then(res => res.json())
+      .then(data => {
+        const reply = data.queryResult.fulfillmentText;
+        document.getElementById('reply').innerText = "Bot: " + reply;
+        speak(reply);
+      });
+    }
+
+    function speak(text) {
+      const utter = new SpeechSynthesisUtterance(text);
+      utter.lang = 'en-US';
+      speechSynthesis.speak(utter);
+    }
+  </script>
+</body>
+</html>
